@@ -967,16 +967,6 @@ document.addEventListener('DOMContentLoaded', () => {
     privacyCurtain.classList.add('hidden');
   });
 
-  const reselectNameBtn = document.getElementById('reselectNameBtn');
-  if (reselectNameBtn) {
-    reselectNameBtn.addEventListener('click', () => {
-      StorageManager.clearUserResult();
-      currentParticipantName = null;
-      renderParticipantView();
-      showToast('Selecione um nome na lista para sortear!', 'info');
-    });
-  }
-
   // Inicialização
   updateSoundIcon();
   checkUrlParameters();
