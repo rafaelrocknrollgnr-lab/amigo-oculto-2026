@@ -157,7 +157,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============================================================
   function checkUrlParameters() {
     const hash = window.location.hash.substring(1);
-    if (!hash) return;
+    if (!hash) {
+      activeUrlDraw = null;
+      return;
+    }
 
     const params = new URLSearchParams(hash);
     const drawDataParam = params.get('draw');
@@ -168,8 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (decoded && decoded.participants && decoded.encryptedDraw) {
         activeUrlDraw = decoded;
         
-        // Se a base local estiver vazia ou com sorteio diferente, salva uma cópia dos participantes
-        if (!appData.draw) {
+        // Se a base local estiver vazia ou com sorteio anterior, sincroniza
+        if (!appData.draw || appData.drawId !== decoded.drawId) {
           appData.participants = decoded.participants;
           appData.title = decoded.title;
         }
@@ -179,6 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
           currentParticipantName = decodeURIComponent(participantParam);
         }
       }
+    } else {
+      activeUrlDraw = null;
     }
   }
 
@@ -186,18 +191,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // RENDERIZAÇÃO DA TELA DO PARTICIPANTE
   // ============================================================
   function renderParticipantView() {
-    // 1. Verifica se já existe um resultado fixo gravado para este dispositivo
-    const savedResult = StorageManager.getUserResult();
-    const hasActiveDraw = (appData.draw && Object.keys(appData.draw).length > 0) || (activeUrlDraw !== null);
-
-    if (savedResult && savedResult.name && savedResult.friend) {
-      // Já realizou o sorteio e o nome é fixo!
-      showRevealedScreen(savedResult.name, savedResult.friend, false);
-      return;
-    }
+    // 1. Identifica se há sorteio ativo (via link na URL ou no armazenamento local)
+    const hasUrlDraw = activeUrlDraw !== null && activeUrlDraw.encryptedDraw !== undefined;
+    const hasLocalDraw = appData.draw !== null && typeof appData.draw === 'object' && Object.keys(appData.draw).length > 0;
+    const hasActiveDraw = hasUrlDraw || hasLocalDraw;
 
     if (!hasActiveDraw) {
       // Nenhum sorteio ativo
+      StorageManager.clearUserResult();
       noDrawActiveState.classList.remove('hidden');
       selectionState.classList.add('hidden');
       drawingAnimationState.classList.add('hidden');
@@ -205,14 +206,58 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Sorteio ativo disponível para selecionar o nome
+    const currentDrawId = hasUrlDraw
+      ? activeUrlDraw.drawId
+      : (appData.drawId || (`draw_${appData.createdAt}`));
+    const currentDrawCreatedAt = hasUrlDraw
+      ? activeUrlDraw.createdAt
+      : appData.createdAt;
+
+    // 2. Validação Inteligente: Verifica se o resultado salvo no celular pertence a ESTE sorteio atual
+    const savedResult = StorageManager.getUserResult();
+    let isResultValidForCurrentDraw = false;
+
+    if (savedResult && savedResult.name && savedResult.friend) {
+      // Verifica quem é o amigo secreto REAL neste sorteio atual
+      let realFriendNow = null;
+      if (hasUrlDraw) {
+        realFriendNow = StorageManager.revealFriendForParticipant(
+          savedResult.name,
+          activeUrlDraw.encryptedDraw,
+          activeUrlDraw.drawSalt
+        );
+      } else if (hasLocalDraw) {
+        realFriendNow = appData.draw[savedResult.name] || null;
+      }
+
+      const idMatches = (!savedResult.drawId || savedResult.drawId === currentDrawId);
+      const timestampMatches = (!savedResult.drawCreatedAt || savedResult.drawCreatedAt === currentDrawCreatedAt);
+
+      // Se o amigo sorteado atual for idêntico e o sorteio não mudou de versão, o resultado permanece fixo
+      if (realFriendNow && realFriendNow === savedResult.friend && idMatches && timestampMatches) {
+        isResultValidForCurrentDraw = true;
+      } else {
+        // O sorteio foi refeito pelo administrador! Descarta o resultado desatualizado
+        StorageManager.clearUserResult();
+        isResultValidForCurrentDraw = false;
+        showToast('🎅 O sorteio foi refeito! Escolha seu nome para ver seu novo amigo secreto.', 'info');
+      }
+    }
+
+    if (isResultValidForCurrentDraw) {
+      // Já realizou este sorteio específico e o amigo é fixo!
+      showRevealedScreen(savedResult.name, savedResult.friend, false);
+      return;
+    }
+
+    // Se o sorteio é novo ou ainda não foi realizado por esta pessoa:
     noDrawActiveState.classList.add('hidden');
     selectionState.classList.remove('hidden');
     drawingAnimationState.classList.add('hidden');
     revealedState.classList.add('hidden');
 
     // Preenche lista de participantes no select
-    const participants = activeUrlDraw ? activeUrlDraw.participants : appData.participants;
+    const participants = hasUrlDraw ? activeUrlDraw.participants : appData.participants;
     participantSelect.innerHTML = '<option value="" disabled selected>Selecione seu nome na lista...</option>';
 
     // Ordena alfabeticamente para facilitar encontrar
@@ -290,8 +335,10 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(tickerInterval);
         giftBox.classList.remove('shaking');
 
-        // Fixa o resultado localmente (NUNCA mais pode mudar neste aparelho)
-        StorageManager.setUserResult(participantName, friendName);
+        // Fixa o resultado localmente vinculado a este sorteio específico
+        const activeId = activeUrlDraw ? activeUrlDraw.drawId : (appData.drawId || (`draw_${appData.createdAt}`));
+        const activeCreated = activeUrlDraw ? activeUrlDraw.createdAt : appData.createdAt;
+        StorageManager.setUserResult(participantName, friendName, activeId, activeCreated);
 
         // Exibe a tela de revelação com celebração
         showRevealedScreen(participantName, friendName, true);
@@ -763,9 +810,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const result = SecretSantaEngine.executeDraw(appData.participants, appData.exclusions);
 
       if (result.success) {
+        const now = Date.now();
+        const drawId = `draw_${now}_${Math.random().toString(36).substring(2, 8)}`;
+        const salt = `natal_${now}`;
         appData.draw = result.draw;
-        appData.createdAt = Date.now();
+        appData.drawId = drawId;
+        appData.createdAt = now;
+        appData.drawSalt = salt;
         StorageManager.saveData(appData);
+        StorageManager.clearUserResult(); // Limpa resultado antigo para quem testar no mesmo aparelho
 
         renderAdminView();
         window.christmasAudio.playJingleBellsCelebration();
@@ -914,8 +967,30 @@ document.addEventListener('DOMContentLoaded', () => {
     privacyCurtain.classList.add('hidden');
   });
 
+  const reselectNameBtn = document.getElementById('reselectNameBtn');
+  if (reselectNameBtn) {
+    reselectNameBtn.addEventListener('click', () => {
+      StorageManager.clearUserResult();
+      currentParticipantName = null;
+      renderParticipantView();
+      showToast('Selecione um nome na lista para sortear!', 'info');
+    });
+  }
+
   // Inicialização
   updateSoundIcon();
   checkUrlParameters();
   renderParticipantView();
+
+  // Atualização em tempo real quando um novo link for clicado no WhatsApp
+  window.addEventListener('hashchange', () => {
+    checkUrlParameters();
+    renderParticipantView();
+  });
+
+  // Atualização quando o navegador restaura da memória (bfcache) no celular
+  window.addEventListener('pageshow', () => {
+    checkUrlParameters();
+    renderParticipantView();
+  });
 });

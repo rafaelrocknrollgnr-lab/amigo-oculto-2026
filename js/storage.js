@@ -93,8 +93,9 @@ class StorageManager {
    */
   static getDefaultData() {
     return {
-      version: '2026.1',
+      version: '2026.2',
       title: 'Amigo Oculto de Natal 2026',
+      drawId: null,
       createdAt: null,
       participants: [],
       exclusions: {}, // { "Rafael": ["Beatriz"] }
@@ -159,13 +160,24 @@ class StorageManager {
   }
 
   /**
-   * Fixa o resultado do sorteio para este participante neste dispositivo
+   * Limpa o resultado gravado no dispositivo (usado quando o sorteio é refeito)
    */
-  static setUserResult(participantName, friendName) {
+  static clearUserResult() {
+    try {
+      localStorage.removeItem(this.STORAGE_KEY_USER_RESULT);
+    } catch (e) {}
+  }
+
+  /**
+   * Fixa o resultado do sorteio para este participante vinculado ao sorteio específico (drawId)
+   */
+  static setUserResult(participantName, friendName, drawId = null, drawCreatedAt = null) {
     try {
       const record = {
         name: participantName,
         friend: friendName,
+        drawId: drawId || null,
+        drawCreatedAt: drawCreatedAt || null,
         date: new Date().toISOString(),
       };
       localStorage.setItem(this.STORAGE_KEY_USER_RESULT, JSON.stringify(record));
@@ -183,6 +195,8 @@ class StorageManager {
     if (!data.draw || !data.participants) return '';
 
     const salt = data.drawSalt || 'natal_2026';
+    const createdAt = data.createdAt || Date.now();
+    const drawId = data.drawId || (`draw_${createdAt}`);
     
     // Ofusca cada destinatário usando a chave única do participante
     const encryptedDraw = {};
@@ -191,11 +205,12 @@ class StorageManager {
     }
 
     const payload = {
+      id: drawId,
       t: data.title || 'Amigo Oculto 2026',
       p: data.participants,
       d: encryptedDraw,
       s: salt,
-      c: data.createdAt || Date.now(),
+      c: createdAt,
     };
 
     return this.encodePayload(payload);
@@ -208,12 +223,16 @@ class StorageManager {
     const payload = this.decodePayload(encodedString);
     if (!payload || !payload.p || !payload.d) return null;
 
+    const createdAt = payload.c || Date.now();
+    const drawId = payload.id || (`draw_${createdAt}`);
+
     return {
+      drawId: drawId,
       title: payload.t || 'Amigo Oculto de Natal 2026',
       participants: payload.p,
       encryptedDraw: payload.d,
       drawSalt: payload.s || 'natal_2026',
-      createdAt: payload.c,
+      createdAt: createdAt,
     };
   }
 
@@ -247,8 +266,11 @@ class StorageManager {
   static resetDrawOnly() {
     const data = this.loadData();
     data.draw = null;
+    data.drawId = null;
+    data.createdAt = null;
+    data.drawSalt = `natal_${Date.now()}`;
     this.saveData(data);
-    localStorage.removeItem(this.STORAGE_KEY_USER_RESULT);
+    this.clearUserResult();
     return data;
   }
 
@@ -257,7 +279,7 @@ class StorageManager {
    */
   static resetEverything() {
     localStorage.removeItem(this.STORAGE_KEY_DATA);
-    localStorage.removeItem(this.STORAGE_KEY_USER_RESULT);
+    this.clearUserResult();
     return this.getDefaultData();
   }
 }
