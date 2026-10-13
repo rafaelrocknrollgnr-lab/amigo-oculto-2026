@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Amigo Oculto de Natal 2026 🎄🎁</title>
+  
+  <!-- Meta tags para compartilhamento no WhatsApp e Redes Sociais -->
+  <meta name="description" content="Sorteio oficial do Amigo Oculto de Natal 2026! Clique para descobrir quem é o seu amigo secreto.">
+  <meta property="og:title" content="Amigo Oculto de Natal 2026 🎄🎅">
+  <meta property="og:description" content="Descubra quem você tirou no Amigo Oculto de Natal! Clique no link e abra o seu presente.">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1512389142860-9c449e58a543?q=80&w=1000&auto=format&fit=crop">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#991b1b">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Mountains+of+Christmas:wght@700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Canvas de Neve Caindo -->
+  <canvas id="snowCanvas"></canvas>
+
+  <!-- Pisca-pisca de Natal no topo -->
+  <div class="christmas-lights" aria-hidden="true">
+    <div class="light-wire"></div>
+    <ul class="lights-string">
+      <li class="light red"></li>
+      <li class="light green"></li>
+      <li class="light gold"></li>
+      <li class="light blue"></li>
+      <li class="light red"></li>
+      <li class="light green"></li>
+      <li class="light gold"></li>
+      <li class="light blue"></li>
+      <li class="light red"></li>
+      <li class="light green"></li>
+      <li class="light gold"></li>
+      <li class="light blue"></li>
+      <li class="light red"></li>
+      <li class="light green"></li>
+      <li class="light gold"></li>
+      <li class="light blue"></li>
+    </ul>
+  </div>
+
+  <!-- Barra Superior de Controles -->
+  <header class="top-nav">
+    <div class="nav-brand">
+      <span class="tree-icon">🎄</span>
+      <span class="brand-text">Natal 2026</span>
+    </div>
+    <div class="nav-actions">
+      <button id="soundToggleBtn" class="icon-btn" title="Ativar/Desativar Som" aria-label="Som">
+        <i class="fa-solid fa-volume-high"></i>
+      </button>
+      <button id="adminToggleBtn" class="btn-admin-nav" title="Painel do Administrador">
+        <i class="fa-solid fa-gear"></i>
+        <span>Admin</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Container Principal -->
+  <main class="main-container">
+
+    <!-- ============================================== -->
+    <!-- TELA 1: PARTICIPANTE (TELA PRINCIPAL)          -->
+    <!-- ============================================== -->
+    <section id="participantView" class="view-section active">
+      
+      <!-- Cabeçalho Festivo -->
+      <div class="festive-hero">
+        <div class="santa-hat-wrapper">
+          <span class="hero-badge">Ho Ho Ho! 🎅</span>
+        </div>
+        <h1 class="festive-title">Amigo Oculto</h1>
+        <h2 class="festive-subtitle">Natal 2026</h2>
+        <p class="festive-intro">
+          Seja bem-vindo ao sorteio oficial de Natal! Escolha seu nome abaixo para descobrir quem é o seu amigo secreto.
+        </p>
+      </div>
+
+      <!-- Card do Sorteio para o Participante -->
+      <div class="card glass-card participant-card">
+        
+        <!-- Estado: Nenhum Sorteio Ativo -->
+        <div id="noDrawActiveState" class="state-container hidden">
+          <div class="empty-icon">🎁</div>
+          <h3>O sorteio ainda não começou!</h3>
+          <p>O administrador do evento está preparando a lista de participantes e as regras. Volte em breve!</p>
+          <button id="goToAdminBtn" class="btn btn-outline mt-3">
+            <i class="fa-solid fa-lock"></i> Sou o Administrador
+          </button>
+        </div>
+
+        <!-- Estado: Seleção do Participante -->
+        <div id="selectionState" class="state-container">
+          <div class="form-group">
+            <label for="participantSelect" class="form-label">
+              <i class="fa-solid fa-user-check text-gold"></i> Quem é você?
+            </label>
+            <div class="custom-select-wrapper">
+              <select id="participantSelect" class="custom-select">
+                <option value="" disabled selected>Selecione seu nome na lista...</option>
+              </select>
+            </div>
+            <span class="form-tip">
+              <i class="fa-solid fa-circle-info"></i> Atenção: Escolha apenas o seu próprio nome!
+            </span>
+          </div>
+
+          <!-- Campo opcional de PIN de segurança (se configurado) -->
+          <div id="pinGroup" class="form-group hidden">
+            <label for="participantPin" class="form-label">
+              <i class="fa-solid fa-key text-gold"></i> Seu PIN de Acesso (4 dígitos)
+            </label>
+            <input type="password" id="participantPin" maxlength="6" class="form-input text-center" placeholder="••••" inputmode="numeric">
+            <span class="form-tip">Digite seu código exclusivo para segurança do seu amigo.</span>
+          </div>
+
+          <!-- Caixa de Presente Interativa -->
+          <div class="gift-box-stage">
+            <div id="giftBox" class="gift-box" role="button" tabindex="0" title="Clique para sortear!">
+              <div class="gift-lid">
+                <div class="gift-ribbon-bow"></div>
+              </div>
+              <div class="gift-body">
+                <div class="gift-ribbon-vertical"></div>
+                <div class="gift-ribbon-horizontal"></div>
+              </div>
+              <div class="gift-glow"></div>
+            </div>
+          </div>
+
+          <button id="drawActionBtn" class="btn btn-gold btn-large btn-block" disabled>
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Descobrir Meu Amigo Oculto!</span>
+          </button>
+
+          <!-- Aviso de Regra -->
+          <p class="draw-rule-note">
+            <i class="fa-solid fa-shield-halved"></i> O sorteio é individual e confidencial. Seu resultado ficará gravado no seu aparelho e não poderá ser alterado!
+          </p>
+        </div>
+
+        <!-- Estado: Animação de Sorteio em Andamento -->
+        <div id="drawingAnimationState" class="state-container hidden">
+          <div class="spinner-stage">
+            <div class="magic-particles">✨</div>
+            <div class="drawing-names-ticker" id="namesTicker">
+              Sorteando...
+            </div>
+            <div class="countdown-bar">
+              <div class="countdown-progress" id="countdownProgress"></div>
+            </div>
+          </div>
+          <p class="drawing-status-text">
+            Consultando os duendes do Papai Noel... 🧝‍♂️🎁
+          </p>
+        </div>
+
+        <!-- Estado: Revelação do Amigo Sorteado -->
+        <div id="revealedState" class="state-container hidden">
+          <div class="revealed-header">
+            <span class="sparkle-badge">🎉 Sorteio Realizado! 🎉</span>
+            <p class="user-greeting">Olá, <strong id="revealedUserName">Você</strong>!</p>
+            <p class="revealed-caption">Seu Amigo Oculto de Natal 2026 é:</p>
+          </div>
+
+          <!-- Cartão Dourado de Revelação -->
+          <div class="gold-reveal-card" id="goldRevealCard">
+            <div class="card-holly top-left">🌿</div>
+            <div class="card-holly top-right">🌿</div>
+            
+            <div class="card-content-masked" id="cardContentMasked">
+              <div class="friend-name-display" id="revealedFriendName">
+                Nome do Amigo
+              </div>
+              <div class="friend-tag">🎁 Amigo Secreto 2026</div>
+            </div>
+
+            <!-- Cortina de Privacidade (Para esconder o nome se estiver com pessoas perto) -->
+            <div class="privacy-curtain hidden" id="privacyCurtain">
+              <div class="curtain-content">
+                <i class="fa-solid fa-eye-slash curtain-icon"></i>
+                <p>Nome ocultado para manter o segredo</p>
+                <button id="showSecretBtn" class="btn btn-sm btn-outline">
+                  <i class="fa-solid fa-eye"></i> Revelar Nome
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ações após revelar -->
+          <div class="revealed-actions">
+            <button id="togglePrivacyBtn" class="btn btn-secondary">
+              <i class="fa-solid fa-eye-slash"></i>
+              <span>Ocultar Nome na Tela</span>
+            </button>
+            <button id="copyShareReminderBtn" class="btn btn-outline">
+              <i class="fa-solid fa-check"></i>
+              <span>Lembrete Salvo!</span>
+            </button>
+          </div>
+
+          <div class="secret-warning-box">
+            <i class="fa-solid fa-lock text-gold"></i>
+            <div>
+              <strong>Shhh... Mantenha em segredo! 🤫</strong>
+              <p>Não conte para ninguém até o dia da entrega dos presentes de Natal. Seu sorteio já está fixo e gravado.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Rodapé Simples e Festivo -->
+      <footer class="view-footer">
+        <p>Amigo Oculto de Natal 2026 • Feito com carinho e espírito natalino 🎄</p>
+      </footer>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TELA 2: PAINEL DO ADMINISTRADOR                -->
+    <!-- ============================================== -->
+    <section id="adminView" class="view-section hidden">
+      
+      <!-- Cabeçalho do Admin -->
+      <div class="admin-header">
+        <div class="admin-title-row">
+          <div>
+            <h1 class="admin-title">
+              <i class="fa-solid fa-sitemap text-gold"></i> Painel do Administrador
+            </h1>
+            <p class="admin-subtitle">Gerencie participantes, configure quem não pode tirar quem e compartilhe o sorteio.</p>
+          </div>
+          <button id="exitAdminBtn" class="btn btn-secondary btn-sm" title="Voltar à tela de participante">
+            <i class="fa-solid fa-arrow-left"></i> Voltar ao Sorteio
+          </button>
+        </div>
+      </div>
+
+      <!-- Status do Sorteio -->
+      <div class="card glass-card admin-status-card mb-4">
+        <div class="status-summary">
+          <div class="status-item">
+            <span class="status-label">Status do Sorteio</span>
+            <span id="adminDrawStatusBadge" class="status-badge badge-pending">
+              <i class="fa-solid fa-hourglass-start"></i> Aguardando Sorteio
+            </span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Participantes</span>
+            <span id="adminTotalParticipants" class="status-number">0</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Exclusões Definidas</span>
+            <span id="adminTotalExclusions" class="status-number">0</span>
+          </div>
+        </div>
+
+        <!-- Banner com Link de Compartilhamento no WhatsApp -->
+        <div id="adminShareSection" class="share-banner mt-3 hidden">
+          <div class="share-header">
+            <h4><i class="fa-brands fa-whatsapp text-green"></i> Link do Sorteio para Enviar aos Participantes</h4>
+            <p>Envie este link para todos no grupo do WhatsApp. Cada um clica, seleciona seu nome e descobre seu amigo!</p>
+          </div>
+          <div class="share-input-group">
+            <input type="text" id="shareLinkInput" readonly class="form-input share-input" value="">
+            <button id="copyShareLinkBtn" class="btn btn-gold" title="Copiar Link">
+              <i class="fa-solid fa-copy"></i> Copiar
+            </button>
+            <button id="whatsappShareBtn" class="btn btn-whatsapp" title="Enviar no WhatsApp">
+              <i class="fa-brands fa-whatsapp"></i> Compartilhar
+            </button>
+          </div>
+          <div class="share-quick-tips">
+            <span><i class="fa-solid fa-check-circle text-gold"></i> O resultado é permanente e fixo para cada pessoa.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Abas de Configuração do Admin -->
+      <div class="admin-tabs">
+        <button class="tab-btn active" data-tab="tab-participants">
+          <i class="fa-solid fa-users"></i> 1. Participantes
+        </button>
+        <button class="tab-btn" data-tab="tab-exclusions">
+          <i class="fa-solid fa-user-slash"></i> 2. Regras de Exclusão
+        </button>
+        <button class="tab-btn" data-tab="tab-draw">
+          <i class="fa-solid fa-gift"></i> 3. Realizar Sorteio
+        </button>
+        <button class="tab-btn" data-tab="tab-settings">
+          <i class="fa-solid fa-sliders"></i> Configurações & Reset
+        </button>
+      </div>
+
+      <!-- ================= ABA 1: PARTICIPANTES ================= -->
+      <div id="tab-participants" class="tab-content active">
+        <div class="card glass-card">
+          <div class="card-header-flex">
+            <h3><i class="fa-solid fa-user-plus text-gold"></i> Cadastrar Participantes</h3>
+            <button id="bulkAddToggleBtn" class="btn btn-link text-gold">
+              <i class="fa-solid fa-list"></i> Adicionar Vários de Uma Vez
+            </button>
+          </div>
+
+          <!-- Formulário de Adicionar Um a Um -->
+          <div id="singleAddForm" class="add-participant-row mt-2">
+            <div class="input-with-button">
+              <input type="text" id="newParticipantInput" class="form-input" placeholder="Digite o nome da pessoa (ex: Maria, Carlos)..." maxlength="40">
+              <button id="addParticipantBtn" class="btn btn-gold">
+                <i class="fa-solid fa-plus"></i> Adicionar
+              </button>
+            </div>
+          </div>
+
+          <!-- Adicionar em Massa (Bulk) -->
+          <div id="bulkAddForm" class="bulk-add-container hidden mt-2">
+            <label for="bulkParticipantsTextarea" class="form-label">
+              Cole a lista de nomes (um por linha ou separados por vírgula):
+            </label>
+            <textarea id="bulkParticipantsTextarea" class="form-textarea" rows="4" placeholder="Rafael&#10;Beatriz&#10;Carlos&#10;Juliana&#10;Fernando"></textarea>
+            <div class="bulk-actions mt-2">
+              <button id="confirmBulkAddBtn" class="btn btn-gold">
+                <i class="fa-solid fa-check"></i> Importar Nomes
+              </button>
+              <button id="cancelBulkAddBtn" class="btn btn-secondary">Cancelar</button>
+            </div>
+          </div>
+
+          <hr class="card-divider">
+
+          <!-- Lista de Participantes Cadastrados -->
+          <div class="participants-list-header">
+            <h4>Lista de Participantes (<span id="participantCount">0</span>)</h4>
+            <span class="text-muted text-sm">Mínimo necessário: 3 participantes</span>
+          </div>
+
+          <div id="participantsList" class="participants-grid mt-2">
+            <!-- Renderizado dinamicamente -->
+            <div class="empty-list-notice">
+              <i class="fa-solid fa-user-group"></i>
+              <p>Nenhum participante cadastrado ainda. Comece adicionando os nomes acima!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= ABA 2: REGRAS DE EXCLUSÃO ================= -->
+      <div id="tab-exclusions" class="tab-content">
+        <div class="card glass-card">
+          <div class="card-header-flex">
+            <div>
+              <h3><i class="fa-solid fa-user-slash text-gold"></i> Quem NÃO pode tirar quem?</h3>
+              <p class="text-muted text-sm">Defina restrições para casais, irmãos ou pessoas que não devem tirar uma à outra.</p>
+            </div>
+            <button id="clearAllExclusionsBtn" class="btn btn-outline btn-sm">
+              <i class="fa-solid fa-trash-can"></i> Limpar Todas
+            </button>
+          </div>
+
+          <!-- Seletor Rápido de Exclusão -->
+          <div class="exclusion-editor-card mt-3">
+            <div class="editor-row">
+              <div class="form-group flex-1">
+                <label for="exclusionSubjectSelect" class="form-label">
+                  <strong>A pessoa:</strong>
+                </label>
+                <select id="exclusionSubjectSelect" class="custom-select">
+                  <option value="" disabled selected>Escolha quem...</option>
+                </select>
+              </div>
+
+              <div class="exclusion-arrow">
+                <i class="fa-solid fa-ban text-red"></i>
+                <span>NÃO pode tirar</span>
+              </div>
+
+              <div class="form-group flex-1">
+                <label for="exclusionTargetSelect" class="form-label">
+                  <strong>A(s) pessoa(s):</strong>
+                </label>
+                <select id="exclusionTargetSelect" class="custom-select">
+                  <option value="" disabled selected>Escolha o proibido...</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="exclusion-actions-row mt-2">
+              <label class="checkbox-container">
+                <input type="checkbox" id="reciprocalExclusionCheck" checked>
+                <span class="checkmark"></span>
+                <span>Regra recíproca (nem A tira B, nem B tira A)</span>
+              </label>
+              <button id="addExclusionRuleBtn" class="btn btn-gold">
+                <i class="fa-solid fa-plus"></i> Aplicar Exclusão
+              </button>
+            </div>
+          </div>
+
+          <hr class="card-divider">
+
+          <!-- Lista Visual das Exclusões Cadastradas -->
+          <div class="exclusions-summary-section">
+            <h4>Exclusões Ativas</h4>
+            <div id="exclusionsListContainer" class="exclusions-grid mt-2">
+              <!-- Renderizado dinamicamente -->
+              <p class="text-muted text-sm">Nenhuma exclusão cadastrada no momento.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= ABA 3: REALIZAR SORTEIO ================= -->
+      <div id="tab-draw" class="tab-content">
+        <div class="card glass-card text-center">
+          <div class="draw-launch-header">
+            <span class="launch-icon">🎲</span>
+            <h2>Gerar o Sorteio de Natal 2026</h2>
+            <p class="max-w-md mx-auto">
+              Ao gerar o sorteio, o sistema calculará uma combinação matematicamente perfeita respeitando 100% de todas as exclusões que você definiu.
+            </p>
+          </div>
+
+          <!-- Validações Pré-Sorteio -->
+          <div class="draw-checklist mt-3">
+            <div id="checkParticipants" class="check-item">
+              <i class="fa-solid fa-circle-check text-green"></i>
+              <span>Pelo menos 3 participantes cadastrados</span>
+            </div>
+            <div id="checkSolvable" class="check-item">
+              <i class="fa-solid fa-circle-check text-green"></i>
+              <span>Regras de exclusão matematicamente possíveis</span>
+            </div>
+          </div>
+
+          <!-- Botão Principal de Sorteio -->
+          <div class="draw-btn-container mt-4">
+            <button id="executeDrawBtn" class="btn btn-gold btn-large">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span>Realizar Sorteio Agora! 🎅</span>
+            </button>
+          </div>
+
+          <!-- Alerta Spoiler para o Administrador -->
+          <div id="adminSpoilerSection" class="admin-spoiler-box mt-4 hidden">
+            <div class="spoiler-header">
+              <i class="fa-solid fa-shield-cat text-gold"></i>
+              <span>Área Secreta do Administrador (Spoiler)</span>
+              <button id="toggleSpoilerBtn" class="btn btn-link text-gold btn-sm">
+                <i class="fa-solid fa-eye"></i> Ver Resultados
+              </button>
+            </div>
+            <div id="spoilerContent" class="spoiler-table-wrapper hidden mt-2">
+              <p class="text-warning text-xs mb-2">
+                <i class="fa-solid fa-triangle-exclamation"></i> Cuidado! Olhar os nomes estragará a sua própria surpresa se você também for participar!
+              </p>
+              <table class="spoiler-table">
+                <thead>
+                  <tr>
+                    <th>Quem Tira</th>
+                    <th>Quem Foi Sorteado</th>
+                    <th>Status</th>
+                    <th>Link Individual</th>
+                  </tr>
+                </thead>
+                <tbody id="spoilerTableBody">
+                  <!-- Linhas preenchidas via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= ABA 4: CONFIGURAÇÕES & RESET ================= -->
+      <div id="tab-settings" class="tab-content">
+        <div class="card glass-card">
+          <h3><i class="fa-solid fa-sliders text-gold"></i> Configurações do Sorteio</h3>
+          
+          <div class="settings-group mt-3">
+            <label class="form-label">Título do Evento</label>
+            <input type="text" id="eventTitleInput" class="form-input" value="Amigo Oculto de Natal 2026">
+          </div>
+
+          <div class="settings-group mt-3">
+            <label class="form-label">PIN do Administrador</label>
+            <div class="input-with-button">
+              <input type="password" id="adminPinInput" class="form-input" placeholder="Padrão: 2026" maxlength="8">
+              <button id="saveAdminPinBtn" class="btn btn-secondary">Alterar PIN</button>
+            </div>
+            <span class="form-tip">Código para acessar este painel. O padrão de fábrica é: <strong>2026</strong>.</span>
+          </div>
+
+          <hr class="card-divider">
+
+          <!-- ZONA DE PERIGO: EXCLUIR SORTEIO / RECOMEÇAR -->
+          <div class="danger-zone">
+            <h4 class="text-red">
+              <i class="fa-solid fa-triangle-exclamation"></i> Zona de Perigo: Recomeçar Sorteio
+            </h4>
+            <p class="text-muted text-sm">
+              Precisa alterar participantes ou começar um sorteio novo do zero? Escolha uma das opções abaixo:
+            </p>
+
+            <div class="danger-actions mt-3">
+              <button id="btnRedrawOnly" class="btn btn-outline-warning">
+                <i class="fa-solid fa-rotate-right"></i> Refazer Apenas o Sorteio
+                <small class="block text-xs">Mantém os participantes e exclusões atuais</small>
+              </button>
+              
+              <button id="btnDeleteEverything" class="btn btn-danger">
+                <i class="fa-solid fa-trash-can"></i> Excluir Sorteio e Começar do Zero
+                <small class="block text-xs">Apaga participantes, exclusões e sorteio</small>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- MODAL: LOGIN DO ADMINISTRADOR                  -->
+  <!-- ============================================== -->
+  <div id="adminLoginModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-icon">🔐</div>
+        <h3>Área do Administrador</h3>
+        <button class="modal-close-btn" id="closeAdminLoginModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Digite a senha ou PIN do administrador para gerenciar o sorteio e cadastrar participantes:</p>
+        <div class="form-group mt-3">
+          <input type="password" id="loginAdminPinInput" class="form-input text-center text-lg" placeholder="Digite o PIN (Padrão: 2026)" autofocus maxlength="10">
+          <p id="adminLoginError" class="text-red text-sm mt-1 hidden">
+            <i class="fa-solid fa-circle-xmark"></i> PIN incorreto. Tente novamente!
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="submitAdminLoginBtn" class="btn btn-gold btn-block">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Acessar Painel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: CONFIRMAÇÃO DE IDENTIDADE DO PARTICIPANTE -->
+  <!-- ============================================== -->
+  <div id="confirmIdentityModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-icon">🎅</div>
+        <h3>Confirmação de Nome</h3>
+      </div>
+      <div class="modal-body text-center">
+        <p>Você selecionou o nome:</p>
+        <h2 id="modalConfirmName" class="text-gold my-2">Nome</h2>
+        <div class="warning-callout">
+          <i class="fa-solid fa-triangle-exclamation text-warning"></i>
+          <span>Atenção: Seu sorteio é pessoal e ficará <strong>fixado</strong> para este nome. Você confirma que é você?</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelIdentityBtn" class="btn btn-secondary">Não, escolher outro</button>
+        <button id="confirmIdentityBtn" class="btn btn-gold">
+          <i class="fa-solid fa-gift"></i> Sim, sou eu!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: CONFIRMAÇÃO DE RESET GERAL              -->
+  <!-- ============================================== -->
+  <div id="resetConfirmModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-icon text-red">⚠️</div>
+        <h3 id="resetModalTitle">Tem certeza?</h3>
+      </div>
+      <div class="modal-body text-center">
+        <p id="resetModalMessage">Esta ação irá apagar o sorteio atual.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelResetModalBtn" class="btn btn-secondary">Cancelar</button>
+        <button id="confirmResetActionBtn" class="btn btn-danger">Sim, Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Container de Toasts (Notificações Flutuantes) -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- Scripts da Aplicação -->
+  <script src="js/audio.js"></script>
+  <script src="js/snow.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
