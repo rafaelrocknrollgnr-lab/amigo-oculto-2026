@@ -111,6 +111,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const toastContainer = document.getElementById('toastContainer');
 
   // ============================================================
+  // FEEDBACK TÁTIL (VIBRAÇÃO EM SMARTPHONES)
+  // ============================================================
+  function triggerHaptic(pattern = 20) {
+    if ('vibrate' in navigator) {
+      try {
+        navigator.vibrate(pattern);
+      } catch (e) {
+        // Ignora caso dispositivo bloqueie
+      }
+    }
+  }
+
+  // ============================================================
   // FUNÇÕES DE UTILIDADE E TOAST
   // ============================================================
   function showToast(message, type = 'info') {
@@ -247,9 +260,10 @@ document.addEventListener('DOMContentLoaded', () => {
     selectionState.classList.add('hidden');
     drawingAnimationState.classList.remove('hidden');
 
-    // Chacoalha a caixa de presente e emite sons
+    // Chacoalha a caixa de presente e emite sons e vibração no celular
     giftBox.classList.add('shaking');
     window.christmasAudio.playBoxShake();
+    triggerHaptic([40, 50, 40]);
 
     const participants = activeUrlDraw ? activeUrlDraw.participants : appData.participants;
     const filteredOthers = participants.filter((p) => p !== participantName);
@@ -269,6 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (counter % 3 === 0) {
         window.christmasAudio.playBoxShake();
+        triggerHaptic(25);
       }
 
       if (counter >= totalTicks) {
@@ -294,8 +309,9 @@ document.addEventListener('DOMContentLoaded', () => {
     revealedFriendName.textContent = friendName;
 
     if (triggerCelebration) {
-      // Toca celebração Jingle Bells
+      // Toca celebração Jingle Bells e vibração festiva no celular
       window.christmasAudio.playJingleBellsCelebration();
+      triggerHaptic([100, 60, 120, 60, 250]);
 
       // Chuva de confetes natalinos (dourado, vermelho, verde, branco)
       if (typeof confetti === 'function') {
@@ -851,6 +867,16 @@ document.addEventListener('DOMContentLoaded', () => {
     currentParticipantName = participantSelect.value;
     drawActionBtn.disabled = !currentParticipantName;
     window.christmasAudio.playClick();
+    triggerHaptic(20);
+
+    if (currentParticipantName) {
+      giftBox.classList.add('pulse-ready');
+      const tapHint = document.getElementById('tapHintBadge');
+      if (tapHint) {
+        tapHint.classList.add('highlight');
+        tapHint.innerHTML = `<i class="fa-solid fa-gift"></i> Toque aqui para sortear o de ${currentParticipantName}!`;
+      }
+    }
   });
 
   // Participante: Clique no Presente ou no Botão de Revelar
