@@ -119,12 +119,107 @@ class StorageManager {
     }
   }
 
+  static CLOUD_ENDPOINT_KEY = 'amigo_oculto_cloud_endpoint_2026';
+  static DEFAULT_CLOUD_URL = 'https://api.restful-api.dev/objects/ff808181a09d98f701a13b76cce66146';
+
+  static getCloudEndpoint() {
+    return localStorage.getItem(this.CLOUD_ENDPOINT_KEY) || this.DEFAULT_CLOUD_URL;
+  }
+
+  static setCloudEndpoint(url) {
+    if (url && url.trim()) {
+      localStorage.setItem(this.CLOUD_ENDPOINT_KEY, url.trim());
+    } else {
+      localStorage.removeItem(this.CLOUD_ENDPOINT_KEY);
+    }
+  }
+
   /**
-   * Salva os dados no localStorage
+   * Salva os dados na nuvem para persistência online centralizada
    */
-  static saveData(data) {
+  static async saveToCloud(data) {
+    const endpoint = this.getCloudEndpoint();
+    if (!endpoint) return false;
+
+    try {
+      const payload = {
+        name: 'amigo_oculto_natal_2026_oficial',
+        data: {
+          version: data.version || '2026.2',
+          title: data.title || 'Amigo Oculto de Natal 2026',
+          drawId: data.drawId || null,
+          createdAt: data.createdAt || null,
+          drawSalt: data.drawSalt || 'natal_2026',
+          participants: Array.isArray(data.participants) ? data.participants : [],
+          exclusions: data.exclusions && typeof data.exclusions === 'object' ? data.exclusions : {},
+          draw: data.draw && typeof data.draw === 'object' ? data.draw : null,
+          updatedAt: Date.now()
+        }
+      };
+
+      const res = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      return res.ok;
+    } catch (e) {
+      console.warn('Erro ao salvar na nuvem online:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Busca os dados centralizados salvos no sistema online
+   */
+  static async fetchFromCloud() {
+    const endpoint = this.getCloudEndpoint();
+    if (!endpoint) return null;
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        },
+        cache: 'no-store'
+      });
+
+      if (!res.ok) return null;
+      const json = await res.json();
+      const rawData = json && json.data ? json.data : json;
+
+      if (!rawData || typeof rawData !== 'object') return null;
+
+      return {
+        version: rawData.version || '2026.2',
+        title: rawData.title || 'Amigo Oculto de Natal 2026',
+        drawId: rawData.drawId || null,
+        createdAt: rawData.createdAt || null,
+        drawSalt: rawData.drawSalt || 'natal_2026',
+        participants: Array.isArray(rawData.participants) ? rawData.participants : [],
+        exclusions: rawData.exclusions && typeof rawData.exclusions === 'object' ? rawData.exclusions : {},
+        draw: rawData.draw && typeof rawData.draw === 'object' ? rawData.draw : null,
+      };
+    } catch (e) {
+      console.warn('Erro ao consultar sistema online:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Salva os dados no localStorage e opcionalmente sincroniza com o sistema online
+   */
+  static saveData(data, syncCloud = true) {
     try {
       localStorage.setItem(this.STORAGE_KEY_DATA, JSON.stringify(data));
+      if (syncCloud) {
+        this.saveToCloud(data).catch(() => {});
+      }
       return true;
     } catch (e) {
       console.error('Erro ao salvar no localStorage:', e);
@@ -280,7 +375,9 @@ class StorageManager {
   static resetEverything() {
     localStorage.removeItem(this.STORAGE_KEY_DATA);
     this.clearUserResult();
-    return this.getDefaultData();
+    const fresh = this.getDefaultData();
+    this.saveToCloud(fresh).catch(() => {});
+    return fresh;
   }
 }
 

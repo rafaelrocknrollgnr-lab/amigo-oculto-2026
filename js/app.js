@@ -153,6 +153,85 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ============================================================
+  // SINCRONIZAÇÃO EM TEMPO REAL COM O SISTEMA ONLINE (NUVEM)
+  // ============================================================
+  let isSyncing = false;
+
+  async function syncWithCloudSystem(silent = false) {
+    if (isSyncing) return;
+    isSyncing = true;
+
+    const badge = document.getElementById('cloudStatusBadge');
+    if (badge && !silent) {
+      badge.className = 'cloud-status-badge syncing';
+      const textSpan = badge.querySelector('.cloud-text');
+      if (textSpan) textSpan.textContent = 'Sincronizando...';
+    }
+
+    try {
+      const cloudData = await StorageManager.fetchFromCloud();
+
+      if (cloudData) {
+        let shouldUpdate = false;
+
+        // Se o usuário abriu o site diretamente (sem link hash específico), a nuvem é a autoridade central!
+        if (!activeUrlDraw) {
+          if (!appData.drawId && cloudData.drawId) {
+            shouldUpdate = true;
+          } else if (cloudData.drawId && cloudData.drawId !== appData.drawId) {
+            shouldUpdate = true;
+          } else if (cloudData.createdAt && (!appData.createdAt || cloudData.createdAt > appData.createdAt)) {
+            shouldUpdate = true;
+          } else if (cloudData.participants && cloudData.participants.length !== appData.participants.length) {
+            shouldUpdate = true;
+          }
+        } else {
+          // Se o sorteio na nuvem for mais recente que o link da URL:
+          if (cloudData.createdAt && activeUrlDraw.createdAt && cloudData.createdAt > activeUrlDraw.createdAt) {
+            shouldUpdate = true;
+            activeUrlDraw = null;
+          }
+        }
+
+        if (shouldUpdate) {
+          appData.title = cloudData.title || appData.title;
+          appData.participants = cloudData.participants || [];
+          appData.exclusions = cloudData.exclusions || {};
+          appData.draw = cloudData.draw || null;
+          appData.drawId = cloudData.drawId || null;
+          appData.createdAt = cloudData.createdAt || null;
+          appData.drawSalt = cloudData.drawSalt || appData.drawSalt;
+
+          StorageManager.saveData(appData, false);
+          renderParticipantView();
+
+          if (adminView && adminView.classList.contains('active')) {
+            renderAdminView();
+          }
+
+          if (!silent) {
+            showToast('☁️ Dados carregados do sistema online!', 'info');
+          }
+        }
+      }
+
+      if (badge) {
+        badge.className = 'cloud-status-badge';
+        const textSpan = badge.querySelector('.cloud-text');
+        if (textSpan) textSpan.textContent = 'Online';
+      }
+    } catch (e) {
+      if (badge) {
+        badge.className = 'cloud-status-badge error';
+        const textSpan = badge.querySelector('.cloud-text');
+        if (textSpan) textSpan.textContent = 'Offline';
+      }
+    } finally {
+      isSyncing = false;
+    }
+  }
+
+  // ============================================================
   // PARSER DE URL (QUANDO CLICADO VIA WHATSAPP)
   // ============================================================
   function checkUrlParameters() {
@@ -971,16 +1050,29 @@ document.addEventListener('DOMContentLoaded', () => {
   updateSoundIcon();
   checkUrlParameters();
   renderParticipantView();
+  syncWithCloudSystem();
 
   // Atualização em tempo real quando um novo link for clicado no WhatsApp
   window.addEventListener('hashchange', () => {
     checkUrlParameters();
     renderParticipantView();
+    syncWithCloudSystem(true);
   });
 
   // Atualização quando o navegador restaura da memória (bfcache) no celular
   window.addEventListener('pageshow', () => {
     checkUrlParameters();
     renderParticipantView();
+    syncWithCloudSystem(true);
   });
+
+  // Sincroniza ao focar na janela/aba
+  window.addEventListener('focus', () => {
+    syncWithCloudSystem(true);
+  });
+
+  // Sincronização suave a cada 25 segundos para manter todos os dispositivos atualizados
+  setInterval(() => {
+    syncWithCloudSystem(true);
+  }, 25000);
 });
